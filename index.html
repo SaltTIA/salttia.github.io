@@ -3,15 +3,14 @@
   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js" crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
-<style type="text/css"></style></head>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose/pose.js" crossorigin="anonymous"></script>
+</head>
 
 <body>
   <div class="container">
     <canvas class="output_canvas" width="640" height="480"></canvas>
-    <video class="input_video" style="width: 1980px; height: 1080px"></video>    
+    <video class="input_video" style="width: 640px; height: 480px"></video>    
   </div>
-
 
 
 <script type="module">
@@ -51,52 +50,54 @@ function precise(x) {
 }
 
 function onResults(results) {
-  canvasCtx.save();
-  canvasElement.width = videoWidth;
-  canvasElement.height = videoHeight;      
-  canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
-  canvasCtx.drawImage(
-      results.image, 0, 0, canvasElement.width, canvasElement.height);
-  if (results.multiHandLandmarks) {
-    for (const landmarks of results.multiHandLandmarks) {
-      drawConnectors(canvasCtx, landmarks, HAND_CONNECTIONS,
-                     {color: '#00FF00', lineWidth: 5});
-      drawLandmarks(canvasCtx, landmarks, {color: '#FF0000', lineWidth: 2});
-    }
-  }
+    canvasCtx.save();
+    canvasElement.width = videoWidth;
+    canvasElement.height = videoHeight;    
+    canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
+    canvasCtx.drawImage(
+        results.image, 0, 0, canvasElement.width, canvasElement.height);
+    drawConnectors(canvasCtx, results.poseLandmarks, POSE_CONNECTIONS,
+                    {color: '#00FF00', lineWidth: 4});
+    drawLandmarks(canvasCtx, results.poseLandmarks,
+                {color: '#FF0000', lineWidth: 2});
+    canvasCtx.restore();
 
-  /*
-  var angle = find_angle(results.poseLandmarks, 14, 12, 11)
+
+    var left_hand_angle = find_angle(results.poseLandmarks, 13, 11, 12)
+    var right_hand_angle = find_angle(results.poseLandmarks, 14, 12, 11)
+    var left_hip_joint =find_angle(11,23,25)
+    var right_hip_joint =find_angle(12,24,26)
+    
 
     canvasCtx.font = "30px Arial";
-    canvasCtx.fillText("Angle"+angle, 10, 50);        
-    console.log(angle)
+    canvasCtx.fillText("Left: "+ precise(left_hand_angle) + " Right: " + precise(right_hand_angle) , 10, 50);        
 
-  */
-  canvasCtx.restore();
+
+
 }
 
-
-const hands = new Hands({locateFile: (file) => {
-  return `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`;
+const pose = new Pose({locateFile: (file) => {
+  return `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${file}`;
 }});
-hands.setOptions({
-  maxNumHands: 1,
+pose.setOptions({
+  modelComplexity: 2,
+  smoothLandmarks: true,
   minDetectionConfidence: 0.5,
   minTrackingConfidence: 0.5
 });
-hands.onResults(onResults);
+pose.onResults(onResults);
 
 const camera = new Camera(videoElement, {
   onFrame: async () => {
-    await hands.send({image: videoElement});
+    await pose.send({image: videoElement});
     videoWidth = videoElement.videoWidth;
-    videoHeight = videoElement.videoHeight;    
+    videoHeight = videoElement.videoHeight;
   },
   //width: 640,
   //height: 360
 });
+
 canvasCtx.font = "30px Arial";
-canvasCtx.fillText("Please allow camera permission, Loading..." , 10, 50);    
+canvasCtx.fillText("Please allow camera permission, Loading..." , 10, 50);        
 camera.start();
-</script><script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands_solution_packed_assets_loader.js" crossorigin="anonymous"></script><script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands_solution_simd_wasm_bin.js" crossorigin="anonymous"></script></body></html>
+</script><script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose/pose_solution_packed_assets_loader.js" crossorigin="anonymous"></script><script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose/pose_solution_simd_wasm_bin.js" crossorigin="anonymous"></script></body></html>
